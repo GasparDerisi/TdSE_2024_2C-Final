@@ -1,0 +1,87 @@
+  task_system.c (task_system.h, task_system_attribute.h) 
+   Non-Blocking Code -> System Modeling
+  
+  task_system_interface.c (task_system_interface.h)
+   Non-Blocking Code
+
+
+
+/*************************** Datos previos *********************************/
+
+El módulo task_system.c es responsable de recibir lo sensado por los sensores y enviarle la información a los actuadores correspondientes
+a través de una máquina de estados. El sistema, a diferencia de los actuadores y los sensores, es único. Por este motivo no se
+implementa en forma de cola circular. Si bien el sistema no se implementa en forma de cola circular, los eventos que recibe de los sensores
+se almacenan en una cola circular que es gestionada mediante los métodos de task_system_interface.c.
+
+
+
+/********************** Arquitectura del código ****************************/
+
+
+En este caso, como el sistema es único y no requiere configuración, la estructura de datos es única:
+
+- task_system_dta: Contiene los datos dinámicos del sistema, como el estado actual del sistema, el evento generado y el valor
+del temporizador empleado para su acción.
+
+
+/****************************** Funciones ************************************/
+
+-  task_system_init (en task_system.c): Inicializa las estructuras y variables necesarias para el control del sistema.
+Imprime información de depuración sobre la configuración inicial del sistema. En esta implementación, el puntero que recibe como
+parámetro no se utiliza.
+
+- init_queue_event_task_system (en task_system_inteface.c): Inicializa la cola donde se guardarán los eventos recibidos por los sensores.
+
+- put_event_task_system (en task_system_interface.c): Es empleada por task_sensor.c para avisar de eventos detectados por los sensores al sistema.
+
+- any_event_task_system (en task_system_inteface.c): Devuelve un valor booleano que indica si hay algún evento sin procesar en la cola de eventos.
+
+- get_event_task_system (en task_system_inteface.c): Devuelve el primer evento de la cola circular de eventos detectados por los sensores.
+
+- task_system_update (en task_system.c): Primero se fija si tiene algún evento por procesar con el método any_event_task_system, luego
+lo lee con get_event_task_system y lo procesa según su máquina de estados. Notar que los eventos que recive hacen referencia a un sensor
+en específico (del cual se recibe la información) y según el sensor del cual se recibe la información, se le informa a un o unos actuadores
+una acción a realizar con el método put_event_task_actuator (ver task_system_interface.c).
+
+
+
+/******************* Aplicación del sistema *************************/
+
+El sistema simula el dinamismo de un portón eléctrico. El portón posee cuatro sensores (para más información de los sensores leer task_sensor.txt)
+que cumplen las siguientes funciones:
+
+- BTN_A: Es un botón que controla el portón.
+- SWC_A: Es un sensor que indica si el portón está completamente cerrado o no.
+- SWC_B: Es un sensor que indica si el portón está completamente abierto o no.
+- SWC_C: Es un sensor infrarrojo que indica si hay algún objeto en el camino del sensor.
+
+Además posee cinco actuadores que cumplen las siguientes funciones (para más información de los sensores leer task_actuator.txt):
+- LED_A: Es una luz que titila si el portón se está cerrando.
+- LED_B: Es una luz que titila si el portón se está abriendo.
+- LED_C: Una Luz que indica cuando el portón está completamente cerrado.
+- LED_D: Una luz que indica cuando el portón no está completamente cerrado.
+- BUZ_A: Un buzzer activo que genera pitidos intermitentes cuando el portón no está completamente cerrado.
+
+Para conectar los sensores con los actuadores, el sistema tiene cinco estados:
+- ST_GATE_OPEN: El portón está completamente abierto.
+- ST_GATE_OPENING: El portón se está abriendo.
+- ST_GATE_CLOSED: El portón está completamente cerrado.
+- ST_GATE_CLOSING: El portón se está cerrando.
+- ST_GATE_STOPED: El portón está parado pero no está completamente abierto ni completamente cerrado.
+
+Para ver una tabla de la máquina de estados, revisar task_system_attribute.h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

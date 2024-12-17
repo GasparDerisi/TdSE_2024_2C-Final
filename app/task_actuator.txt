@@ -1,0 +1,83 @@
+  task_actuator.c (task_actuator.h, task_actuator_attribute.h) 
+   Non-Blocking & Update By Time Code -> Actuator Modeling
+
+  task_actuator_interface.c (task_actuator_interface.h)
+   Non-Blocking Code
+
+/*************************** Datos previos *********************************/
+
+El módulo task_actuator.c es responsable de actualizar el estado de los actuadores a través de una máquina de estados para detectar
+cambios en su condición (encendido, no encendido, titilando o un único pulso). En esta implementación se utilizan cinco actuadores;
+ID_BUZ_A (puerto PA6), ID_LED_A (Puerto PA9), ID_LED_B (puerto PC7), ID_LED_C (puerto PB6) e ID_LED_D (puerto PA7).
+
+Cada actuador tiene cuatro estados principales, ST_ACTUATOR_XX_OFF (indica que el actuador no encendido) y ST_ACTUATOR_XX_ON
+(indica que el actuador está encendido), ST_ACTUATOR_XX_BLINK (indica que el actuador está titilando cada DEL_ACTUATOR_XX_BLI ticks de clock)
+y ST_ACTUATOR_XX_PULSE (indica que el actuador funcionará durante un único pulso de duración DEL_ACTUATOR_XX_PUL ticks de clock).
+Para mayor detalle sobre la máquina de estados que gobierna el funcionamiento de los actuadores, ver task_actuator_attribute.h
+
+
+/********************** Arquitectura del código ****************************/
+
+
+Estructuras Principales (definidas en task_actuator_attribute.c):
+
+- task_actuator_cfg_list: Define la configuración de cada actuador. Es una lista del tipo task_actuator_cfg_t, la cual contiene los atributos;
+	identifier: Un enumerativo que funciona como identificador del sensor.
+	gpio_port y pin: Identifican el puerto y el pin del que se va a tomar la señal de entrada del sensor.
+	actuator_on: Permite encender el actuador.
+	actuator_off: Permite apagar el actuador.
+
+- task_actuator_dta_list: Contiene los datos dinámicos de cada actuador, como el estado actual del actuador, el evento generado y el valor
+del temporizador empleado para su acción.
+
+
+/************************* Variables globales *******************************/
+
+- g_task_actuator_cnt: Contador global que registra las ejecuciones de la tarea.
+- g_task_actuator_tick_cnt: Temporizador global protegido por interrupciones para controlar el tiempo de ejecución.
+
+
+/****************************** Funciones ************************************/
+
+-  task_actuator_init (en task_actuator.c): Inicializa las estructuras y variables necesarias para el control de los actuadores.
+Imprime información de depuración sobre la configuración inicial de cada actuador. En esta implementación, el puntero que recibe como
+parámetro no se utiliza.
+
+- task_actuator_update (en task_actuator.c): Actualiza continuamente el estado de cada uno de los actuadores mediante un bucle infinito basado en una cola circular.
+Con la información recibida de task_system.c y la actualización de los eventos con la función put_event_task_actuator (de task_actuator_interface.c)
+actualiza el estado de cada actuador en según su máquina de estados.
+
+- put_event_task_actuator (en task_actuator_interface.c): Se encarga de actualizar el evento (lo rremplaza por el dado por parámetro)
+de un actuador (indicado por parámetro). Esta función la emplea task_system.c para conectar la información recibida por los sensores
+con una acción a realizar por los actuadores.
+
+/************************** Notas importantes ********************************/
+
+- Las interrupciones se deshabilitan temporalmente durante las actualizaciones de g_task_actuator_tick_cnt para proteger recursos compartidos.
+- La configuración y los estados de los actuadores deben coincidir con las necesidades específicas del sistema.
+- En caso de querer agregar más actuadores se debe, además de configurar los puertos en el .ioc (y por lo tanto agregar el puerto designado en board.h),
+agregar el ID correspondiente en el enumerativo task_actuator_id (en task_actuator_attribute.h), agregar el actuador y su configuración en 
+task_actuator_cfg_list (en task_actuator.c) y dar sus parámetros de inicialización en task_actuator_dta_list (en task_actuator.c).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

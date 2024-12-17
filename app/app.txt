@@ -1,0 +1,35 @@
+  app.c (app.h)
+   Endless loops, which execute tasks with fixed computing time. This 
+   sequential execution is only deviated from when an interrupt event occurs.
+
+   app.c (app.h)
+   
+   - app_init se encarga de inicializar los actuadores con task_sensor_init (ver task_sensor.c), task_system_init (ver task_system.c) y
+   task_actuator_init (ver task_actuator.c).
+   
+   - app_update inicia un bucle infinito que actualiza los estados de los sensores con task_sensor_update (ver task_sensor.c), luego del sistema
+   con task_system_update (ver task_system.c) y, por último, de los actuadores con task_actuator_update (ver task_actuator.c)
+   
+   Todos estos métodos se almacenan y ordenan en task_cfg_list, lista la cual luego será recorrida en el bucle infinito.
+   
+   Es importante que se realice en este orden porque el flujo del programa es:
+   1. Mido cambios en los sensores y le informo los cambios al sistema.
+   2. El sistema procesa la información recibida y le indica acciones a realizar a los actuadores.
+   3. Los actuadores realizan dichas acciones.
+   
+    
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   

@@ -1,0 +1,72 @@
+task_sensor.c (task_sensor.h, task_sensor_attribute.h) 
+Non-Blocking & Update By Time Code -> Sensor Modeling
+Documentación: Módulo task_sensor.c
+
+
+/*************************** Datos previos *********************************/
+
+El módulo task_sensor.c es responsable de monitorear el estado de los sensores a través de una máquina de estados para detectar
+cambios en su condición (accionado o no accionado) y notificar estos eventos al módulo task_system.c.
+En esta implementación se utilizan cuatro sensores; BTN_A (puerto PB5), SWC_A (Puerto PB4), SWC_B (puerto PB10), SWC_C (puerto PA8).
+
+Cada sensor tiene dos estados principales, ST_SENSOR_XX_UP (indica que el sensor no está accionado) y ST_SENSOR_XX_DOWN
+(indica que el sensor está accionado). Adicionalmente, se implementan dos estados de transición para mitigar el efecto rebote; 
+ST_SENSOR_XX_FALLING (transición de no accionado a accionado) y ST_SENSOR_XX_RISING (transición de accionado a no accionado).
+Para mayor detalle sobre la máquina de estados que gobierna el funcionamiento de los sensores, ver task_sensor_attribute.h
+
+
+/********************** Arquitectura del código ****************************/
+
+
+Estructuras Principales (definidas en task_sensor_attribute.c):
+
+- task_sensor_cfg_list: Define la configuración de cada sensor. Es una lista del tipo task_sensor_cfg_t, la cual contiene los atributos;
+	identifier: Un enumerativo que funciona como identificador del sensor.
+	gpio_port y pin: Identifican el puerto y el pin del que se va a tomar la señal de entrada del sensor.
+	pressed: Le permite identificar a la placa cuándo el sensor está activo.
+	signal_up: Evento que se mandará a system.c en caso de no estar apretado el botón.
+	signal_down: Evento que se mandará a system.c en caso de estar apretado el botón.
+
+- task_sensor_dta_list: Contiene los datos dinámicos de cada sensor, como el estado actual del sensor, el evento generado y el valor
+del temporizador empleado para mitigar el efecto rebote.
+
+
+/************************* Variables globales *******************************/
+
+- g_task_sensor_cnt: Contador global que registra las ejecuciones de la tarea.
+- g_task_sensor_tick_cnt: Temporizador global protegido por interrupciones para controlar el tiempo de ejecución.
+
+
+/****************************** Funciones ************************************/
+
+-  task_sensor_init: Inicializa las estructuras y variables necesarias para el monitoreo de sensores.
+Imprime información de depuración sobre la configuración inicial de cada sensor. En esta implementación, el puntero que recibe como
+parámetro no se utiliza.
+
+
+- task_sensor_update: Monitorea continuamente los sensores mediante un bucle infinito basado en una cola circular.
+Primero lee las entradas digitales de los pines y puertos asociados a cada sensor para actualizar el evento en casa sensor. Luego,
+actualiza el estado de cada sensor en según su máquina de estados. En caso de ser necesario, notifica eventos al módulo
+task_system.c utilizando la función put_event_task_system.
+
+
+/************************** Notas importantes ********************************/
+
+- Las interrupciones se deshabilitan temporalmente durante las actualizaciones de g_task_sensor_tick_cnt para proteger recursos compartidos.
+- La configuración y los estados de los sensores deben coincidir con las necesidades específicas del sistema.
+- En caso de querer agregar más sensores se debe, además de configurar los puertos en el .ioc (y por lo tanto agregar el puerto designado en board.h),
+agregar el ID correspondiente en el enumerativo task_sensor_id (en task_sensor_attribute.h), agregar el sensor y su configuración en 
+task_sensor_cfg_list (en task_sensor.c) y dar sus parámetros de inicialización en task_sensor_dta_list (en task_sensor.c). Por último,
+se debe agregar el evento que indicará que el sensor está accionado o no en el enumerativo task_system_ev (task_system_attribute.h)
+y agregar un if en cada uno de los estados del switch case del sistema, donde se analice el evento de actividad e inactividad del 
+sensor incorporado.
+
+
+
+
+
+
+
+
+
+
